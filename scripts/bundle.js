@@ -3480,9 +3480,7 @@ function drainQueue() {
         currentQueue = queue;
         queue = [];
         while (++queueIndex < len) {
-            if (currentQueue) {
-                currentQueue[queueIndex].run();
-            }
+            currentQueue[queueIndex].run();
         }
         queueIndex = -1;
         len = queue.length;
@@ -3534,6 +3532,7 @@ process.binding = function (name) {
     throw new Error('process.binding is not supported');
 };
 
+// TODO(shtylman)
 process.cwd = function () { return '/' };
 process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
@@ -32587,7 +32586,18 @@ var React = require('react');
 module.exports = React.createClass({
 	displayName: "exports",
 
+	getInitialState: function getInitialState() {
+		return { error: null };
+	},
 	render: function render() {
+		var errorElement = null;
+		if (this.state.error) {
+			errorElement = React.createElement(
+				"p",
+				{ className: "red" },
+				this.state.error
+			);
+		}
 		return React.createElement(
 			"div",
 			{ className: "container" },
@@ -32595,12 +32605,69 @@ module.exports = React.createClass({
 				"div",
 				{ className: "row" },
 				React.createElement(
-					"h1",
-					null,
-					"Login"
+					"form",
+					{ className: "col s12", onSubmit: this.onLogin },
+					React.createElement(
+						"h1",
+						null,
+						"Login"
+					),
+					errorElement,
+					React.createElement(
+						"div",
+						{ className: "row" },
+						React.createElement(
+							"div",
+							{ className: "input-field col s12" },
+							React.createElement("input", { type: "text", ref: "email", className: "validate", id: "email_address" }),
+							React.createElement(
+								"label",
+								{ htmlFor: "first_name" },
+								"Email Address"
+							)
+						)
+					),
+					React.createElement(
+						"div",
+						{ className: "row" },
+						React.createElement(
+							"div",
+							{ className: "input-field col s12" },
+							React.createElement("input", { type: "password", ref: "password", className: "validate", id: "password" }),
+							React.createElement(
+								"label",
+								{ htmlFor: "password" },
+								"Password"
+							)
+						)
+					),
+					React.createElement(
+						"div",
+						{ className: "row" },
+						React.createElement(
+							"button",
+							{ className: "waves-effect waves-light btn" },
+							"Login"
+						)
+					)
 				)
 			)
 		);
+	},
+	onLogin: function onLogin(e) {
+		var _this = this;
+
+		e.preventDefault();
+		Parse.User.logIn(this.refs.email.getDOMNode().value, this.refs.password.getDOMNode().value, {
+			success: function success(u) {
+				_this.props.router.navigate('dashboard', { trigger: true });
+			},
+			error: function error(u, _error) {
+				_this.setState({
+					error: _error.message
+				});
+			}
+		});
 	}
 });
 
@@ -32769,6 +32836,7 @@ var React = require('react');
 var Backbone = require('backbone');
 window.$ = require('jquery');
 window.jQuery = $;
+Parse.initialize('6g2KhoTvaKHA5EnH5chPfBswiOdGGb0YcUfHYk7e', 'wB4uBvaSIuAquXA3uJllCFQqv6OocxPSEhevan0h');
 
 var NavigationComponent = require('./components/NavigationComponent');
 var HomeComponent = require('./components/HomeComponent');
@@ -32794,7 +32862,7 @@ var Router = Backbone.Router.extend({
 		React.render(React.createElement(DashboardComponent, null), app);
 	},
 	login: function login() {
-		React.render(React.createElement(LoginComponent, null), app);
+		React.render(React.createElement(LoginComponent, { router: r }), app);
 	},
 	register: function register() {
 		React.render(React.createElement(RegisterComponent, { router: r }), app);
